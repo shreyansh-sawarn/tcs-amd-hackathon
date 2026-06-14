@@ -179,7 +179,9 @@ def generate_slide_outline(scenario_name, results, elapsed, tokens, throughput, 
   * Reduction in Mean Time to Resolve (MTTR) from hours to under 2 minutes.
   * Prevention of cascading service outages through dynamic Blast Radius mapping.
   * Direct cost savings of up to $18,500/hr by resolving outages before revenue impact thresholds.
-* **Key Differentiator:** Autonomous closed-loop action center (one-click deployment repair script) combined with automatic ServiceNow ticket logging and incident timeline reconstruction.
+* **Key Differentiator:** 
+  * Ingestion flexibility: This platform can ingest incidents from Prometheus, Grafana, ServiceNow, telecom NOCs, or uploaded incident files.
+  * Closed-loop remediation: Autonomous one-click deployment repair script execution paired with real-time ServiceNow ticket logging and postmortem creation.
 * **Demo Flow:** Show telemetry alarm stream -> run agent diagnostic swarm -> inspect consensus negotiation & thinking trail -> approve remediation -> verify real-time infrastructure recovery metrics.
 """
     return slide_content
@@ -559,7 +561,7 @@ with col2:
                     st.session_state.get("peak_temp", 52.0)
                 )
                 st.download_button(
-                    label="📥 Export Submission Presentation Slide Outline (Markdown)",
+                    label="📥 Export Executive Slide Outline & Telemetry Audit (Markdown)",
                     data=slide_outline,
                     file_name=f"submission_slide_outline_{st.session_state.selected_scenario.lower().replace(' ', '_')}.md",
                     mime="text/markdown",
