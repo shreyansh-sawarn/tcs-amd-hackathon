@@ -1,0 +1,27 @@
+{
+  "name": "Order Service OOM Memory Leak",
+  "alerts": [
+    "Alert: OrderProcessing Pod restarted (liveness probe failure)",
+    "Alert: Pod memory utilization exceeds 95% threshold"
+  ],
+  "logs": [
+    "2026-06-14T11:45:00Z [INFO] OrderProcessing: Processing batch size 5000",
+    "2026-06-14T11:47:12Z [WARNING] JVM: Heap utilization at 96% (Available: 40MB)",
+    "2026-06-14T11:48:05Z [ERROR] JVM: OutOfMemoryError: Java heap space. Dumping heap to java_pid12.hprof",
+    "2026-06-14T11:48:10Z [CRITICAL] kubelet: Container order-proc-service failed liveness probe and was restarted"
+  ],
+  "metrics": {
+    "CPU Usage": "85% (GC Thrashing)",
+    "Memory Usage": "99% (Saturated)",
+    "Active DB Connections": "20/100",
+    "Network Latency": "15ms"
+  },
+  "historical_incidents": [
+    {
+      "id": "INC-0988",
+      "name": "Order Service Crash",
+      "date": "1 month ago",
+      "resolution": "Fixed memory leak in batch processing buffer allocation. Increased JVM max heap memory limit (-Xmx) from 2G to 4G in config map."
+    }
+  ]
+}

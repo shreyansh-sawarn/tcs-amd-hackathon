@@ -1,0 +1,27 @@
+{
+  "name": "Telecom Edge Router Failover & High Latency",
+  "alerts": [
+    "Alert: BGP Session Down with core switch (EdgeRouter01)",
+    "Alert: Edge Gateway Packet Loss > 15%"
+  ],
+  "logs": [
+    "2026-06-14T10:10:05Z [WARNING] EdgeRouter01: Interface GigabitEthernet0/1 state protocol down",
+    "2026-06-14T10:10:12Z [ERROR] EdgeRouter01: BGP-5-ADJCHANGE: neighbor 10.255.0.2 Down - BGP Notification sent",
+    "2026-06-14T10:11:00Z [INFO] NOCMonitor: Packet loss to customer edge gateway at 18.5%",
+    "2026-06-14T10:11:45Z [CRITICAL] CoreLink: Link saturation detected on backup interface GigabitEthernet0/2 due to failover"
+  ],
+  "metrics": {
+    "CPU Usage": "22%",
+    "Memory Usage": "35%",
+    "Active DB Connections": "5/100",
+    "Network Latency": "420ms (Severe)"
+  },
+  "historical_incidents": [
+    {
+      "id": "INC-0761",
+      "name": "Edge Switch Port Flapping",
+      "date": "2 months ago",
+      "resolution": "Reset BGP session interface and initiated virtual router redundancy protocol (VRRP) failover check. Interface GigabitEthernet0/1 was rebooted."
+    }
+  ]
+}

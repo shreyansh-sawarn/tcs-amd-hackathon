@@ -1,0 +1,27 @@
+{
+  "name": "Database Connection Pool Exhaustion",
+  "alerts": [
+    "Alert: Payment API response time > 3 seconds (SLA breach)",
+    "Alert: DBConnectionPool saturation alert (100% utilized)"
+  ],
+  "logs": [
+    "2026-06-14T12:03:01Z [WARNING] PaymentAPI: request response time 3450ms exceeds SLA",
+    "2026-06-14T12:04:12Z [ERROR] DBConnectionPool: Connection request timeout after 15000ms. Active: 100, Idle: 0, Max: 100",
+    "2026-06-14T12:04:15Z [ERROR] PaymentAPI: failed to get DB connection. Internal Server Error (500)",
+    "2026-06-14T12:05:00Z [CRITICAL] BillingService: Cascading failure. Downstream PaymentAPI unreachable."
+  ],
+  "metrics": {
+    "CPU Usage": "42%",
+    "Memory Usage": "68%",
+    "Active DB Connections": "100/100 (100%)",
+    "Network Latency": "12ms"
+  },
+  "historical_incidents": [
+    {
+      "id": "INC-1024",
+      "name": "Database Pool Saturation",
+      "date": "3 weeks ago",
+      "resolution": "Increased the database connection pool limit (Max Connections) from 100 to 250 in the helm charts and updated the pool timeout settings."
+    }
+  ]
+}

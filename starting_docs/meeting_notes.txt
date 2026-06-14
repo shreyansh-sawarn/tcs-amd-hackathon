@@ -1,0 +1,32 @@
+Meeting Discussion Summary
+
+The discussion focused primarily on providing technical guidance and addressing logistical queries related to the AMD TCS AI Hackathon, including GPU access, environment usage, and submission details.GPU Demonstration and Environment
+Demonstration Objective: Aditya Sivagnanam demonstrated basic command-line operations to verify GPU status and functionality as a basis for the hackathon environment.
+Technical Setup: The demo involved serving a Qwen 3 30-billion parameter model using VLM commands within a Jupyter notebook, utilizing separate terminal windows within the notebook interface for command execution.
+GPU Monitoring: Attendees were shown useful commands for monitoring:
+watch Rock'em SMI (or AMD SMI) to check GPU temperature, node ID, and fan speed.
+AMD half an SMI to monitor VRAM/memory utilization while running models.
+AI Agent Use Case: The group discussed the goal of running a Pedantic AI agent to interface with an LLM and an MCP server to handle complex queries, such as looking up Airbnb availability based on a user's location and time zone.
+Access, Logistics, and GPU Usage
+Correct Portal URL: Malini Bhandaru clarified the correct access link for the hackathon is notebooks.amd.com/TCS-HACKATHON. This specific portal runs on a time-based limit, not a dollar-based credit system, unlike the general AMD developer portal.
+Login Requirements: Participants must log in using their TCS email ID on the developer program portal to ensure they receive priority access for GPU usage and the AI Academy.
+Accessing Documents (Handbook/PPTs):
+Reetu Asthana showed that necessary documents (Handbook, Kickoff Deck, recordings, and use cases) are available in a shared Google Drive/OneDrive folder.
+The materials are also available on the Discord page (accessible via a QR code displayed by Aditya Sivagnanam) in the General Channel's pinned messages. It was noted that Discord may be restricted on TCS laptops, recommending personal devices for chat and document retrieval.
+Time Quota: The GPU session time limit has been increased from four hours to eight hours within a 24-hour period for each team.
+GPU Assignment: One GPU session is assigned per team.
+Use Cases and Submission Details
+Use Case Selection: While not restricted to the provided list, teams are strongly encouraged to select use cases relevant to TCS business units to ensure maximum relevance to the collaboration's goals and judging weightage.
+Submission Components: Teams must prepare and submit three components: a presentation, a demo video, and the source code.
+Submission Process: Submissions will be uploaded via a form on the Ultimatics prime event page, with the link to be shared via email.
+Submission Deadline: Submissions are due before 11:59 PM ISD on the 14th.
+Judging Criteria: Judging focuses on whether the solution effectively runs on the GPUs and solves a real-world problem; a high-quality presentation/demo video is essential for communicating the solution's impact.
+Technical Questions and Development Environment
+Hugging Face Models: It is safe to use personal Hugging Face tokens to download models, as the user session is secure and isolated.
+Frontend/UI Development:
+The primary interface is Jupyter Lab, which supports command-line use and Python notebooks.
+The team confirmed willingness to support connecting frontend interfaces (like Streamlit or Gradio) by enabling specific ports, and encouraged participants to utilize Jupyter Lab extensions.
+An attendee confirmed that Gradio can be run from the Jupyter notebook.
+A suggested solution for a firewall issue that prevents editing of .py files is to rename them to .txt for modification and then back to .py.
+Docker/Containers: A question about enabling Docker or Podman for running secondary services like databases was raised, but a full answer was deferred.
+Post-Hackathon GPU Access: After the hackathon, participants can continue using the AI Developer Program and claim 100 GPU credits for future projects.
