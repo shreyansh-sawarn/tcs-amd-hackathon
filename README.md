@@ -10,37 +10,31 @@ The following diagram illustrates the sequential agent reasoning loop, vector da
 
 ```mermaid
 graph TD
-    %% Styling
-    classDef inputs fill:#1b2838,stroke:#ff9900,stroke-width:2px,color:#fff;
-    classDef agent fill:#0f172a,stroke:#3b82f6,stroke-width:2px,color:#fff;
-    classDef hardware fill:#0b1329,stroke:#10b981,stroke-width:2px,color:#fff;
-    classDef output fill:#1c2541,stroke:#a855f7,stroke-width:2px,color:#fff;
-
     %% Elements
-    A1[Prometheus Alerts] :::inputs
-    A2[Kibana Log Streams] :::inputs
-    A3[System Metrics] :::inputs
+    A1[Prometheus Alerts]
+    A2[Kibana Log Streams]
+    A3[System Metrics]
 
     subgraph "Agent Swarm Reasoning Loop (Sequential Consensus)"
-        Agent1[👁️ 1. Observability Agent] :::agent
-        AgentMemory[(🧠 Agent Memory <br/> Vector DB Lookup)] :::agent
-        Agent2[🔍 2. RCA Agent] :::agent
-        Agent3[💥 3. Blast Radius Agent] :::agent
-        Agent4[🛠️ 4. Remediation Agent] :::agent
-        Agent5[⚡ 5. Operations Agent] :::agent
+        Agent1[👁️ 1. Observability Agent]
+        AgentMemory[(🧠 Agent Memory <br/> Vector DB Lookup)]
+        Agent2[🔍 2. RCA Agent]
+        Agent3[💥 3. Blast Radius Agent]
+        Agent4[🛠️ 4. Remediation Agent]
+        Agent5[⚡ 5. Operations Agent]
     end
 
     subgraph "Inference & Telemetry Platform"
-        vLLM[🚀 vLLM Server <br/> Qwen2.5-7B-Instruct] :::hardware
-        GPU[📟 AMD Instinct MI300X <br/> 192GB HBM3 VRAM] :::hardware
-        ROCM[📊 rocm-smi Background <br/> Telemetry Sampling] :::hardware
+        vLLM[🚀 vLLM Server <br/> Qwen2.5-7B-Instruct]
+        GPU[📟 AMD Instinct MI300X <br/> 192GB HBM3 VRAM]
+        ROCM[📊 rocm-smi Background <br/> Telemetry Sampling]
     end
 
     subgraph "NOC Resolution Center"
-        Repair[🔧 Hot-Patch Command Execution] :::output
-        ServiceNow[📝 ServiceNow Incident Logs] :::output
-        Postmortem[📄 Dynamic Postmortem Generation] :::output
-        PPTX[📥 Executive Presentation Outline] :::output
+        Repair[🔧 Hot-Patch Command Execution]
+        ServiceNow[📝 ServiceNow Incident Logs]
+        Postmortem[📄 Dynamic Postmortem Generation]
+        PPTX[📥 Executive Presentation Outline]
     end
 
     %% Routing
@@ -62,6 +56,18 @@ graph TD
     Agent5 --> ServiceNow
     Agent5 --> Postmortem
     Agent5 --> PPTX
+
+    %% Styling Definitions
+    classDef inputs fill:#1b2838,stroke:#ff9900,stroke-width:2px,color:#fff;
+    classDef agent fill:#0f172a,stroke:#3b82f6,stroke-width:2px,color:#fff;
+    classDef hardware fill:#0b1329,stroke:#10b981,stroke-width:2px,color:#fff;
+    classDef output fill:#1c2541,stroke:#a855f7,stroke-width:2px,color:#fff;
+
+    %% Class Bindings
+    class A1,A2,A3 inputs;
+    class Agent1,AgentMemory,Agent2,Agent3,Agent4,Agent5 agent;
+    class vLLM,GPU,ROCM hardware;
+    class Repair,ServiceNow,Postmortem,PPTX output;
 ```
 
 ---
@@ -109,7 +115,7 @@ Keep an eye on the GPU power draw, temperatures, and compute utilization:
 ```bash
 watch -n 1 rocm-smi
 ```
-During active swarm reasoning loops, you will observe the socket power draw rise from the **191W** idle state up to a peak of **~700W** at **98% GPU utilization**.
+During active swarm reasoning loops, you will observe the socket power draw rise from the **191W** idle state up to a peak of **~750W** at **98% GPU utilization**.
 
 ---
 
