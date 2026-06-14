@@ -186,7 +186,6 @@ def generate_slide_outline(scenario_name, results, elapsed, tokens, throughput, 
 """
     return slide_content
 
-# Session State Initialization
 if "selected_scenario" not in st.session_state:
     st.session_state.selected_scenario = list(scenarios.keys())[0] if scenarios else ""
 if "pipeline_results" not in st.session_state:
@@ -206,7 +205,6 @@ if "remediation_output" not in st.session_state:
 if "ticket_id" not in st.session_state:
     st.session_state.ticket_id = None
 
-# Sidebar controls
 with st.sidebar:
     st.image("https://img.icons8.com/nolan/96/airplane-take-off.png", width=60)
     st.markdown("### **OpsPilot AI**")
@@ -220,7 +218,6 @@ with st.sidebar:
         index=0
     )
     
-    # Check if scenario changed to reset pipeline state
     if scenario_selection != st.session_state.selected_scenario:
         st.session_state.selected_scenario = scenario_selection
         st.session_state.pipeline_results = None
@@ -252,20 +249,16 @@ with st.sidebar:
         except Exception as e:
             st.error(f"Invalid format: {e}")
 
-# Retrieve selected scenario data
 current_scenario = scenarios.get(st.session_state.selected_scenario, {})
 
-# Title Block
 st.markdown("<div class='main-title'>OpsPilot AI</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtitle'>Autonomous Operations Intelligence Platform — Incident Diagnosis, RCA, & Resolution</div>", unsafe_allow_html=True)
 
-# Main Dashboard Layout
 col1, col2 = st.columns([2, 3])
 
 with col1:
     st.markdown("### 📊 Live Telemetry & Alarm Stream")
     
-    # Metric cards display
     if current_scenario:
         metrics = current_scenario.get("metrics", {})
         m_col1, m_col2 = st.columns(2)
@@ -282,7 +275,6 @@ with col1:
 
     st.write("")
     
-    # Alerts and logs display
     with st.container(border=True):
         st.markdown("🔔 **Active Alerts**")
         for alert in current_scenario.get("alerts", []):
@@ -292,21 +284,18 @@ with col1:
         log_text = "\n".join(current_scenario.get("logs", []))
         st.code(log_text, language="log")
 
-    # Run Analysis Button
     st.write("")
     if st.button("🚀 Ingest & Start Multi-Agent Diagnostic Swarm", use_container_width=True, type="primary"):
         with st.spinner("Initializing sequential agent context pipeline..."):
             try:
                 orchestrator = AgentOrchestrator(use_real_llm=use_real_llm, model_name=model_name)
                 
-                # Start the pipeline runner thread
                 q = queue.Queue()
                 t = threading.Thread(target=run_pipeline_worker, args=(q, orchestrator, st.session_state.selected_scenario, current_scenario))
                 
                 start_time = time.time()
                 t.start()
                 
-                # Sample GPU stats actively in the main thread while the pipeline runs
                 peak_power = 0.0
                 peak_gpu = 0.0
                 peak_temp = 0.0
@@ -317,7 +306,7 @@ with col1:
                         if stats["power"] > peak_power: peak_power = stats["power"]
                         if stats["gpu"] > peak_gpu: peak_gpu = stats["gpu"]
                         if stats["temp"] > peak_temp: peak_temp = stats["temp"]
-                    time.sleep(0.1)  # sample every 100ms
+                    time.sleep(0.1)
                     
                 t.join()
                 elapsed_time = time.time() - start_time
@@ -329,7 +318,6 @@ with col1:
                     st.session_state.pipeline_results = results
                     st.session_state.elapsed_time = elapsed_time
                     
-                    # Store real or benchmark fallbacks
                     st.session_state.peak_power = peak_power if peak_power > 0 else 685.0
                     st.session_state.peak_gpu = peak_gpu if peak_gpu > 0 else 98.0
                     st.session_state.peak_temp = peak_temp if peak_temp > 0 else 52.0
@@ -341,7 +329,6 @@ with col1:
                 st.error(f"Execution Error: {e}")
 
 with col2:
-    # Always display Architecture Overview
     with st.expander("🗺️ How OpsPilot AI Works (Autonomous Reasoning Loop)", expanded=False):
         st.markdown("""
         **OpsPilot AI uses a sequential multi-agent loop with shared consensus memory:**
@@ -375,7 +362,6 @@ with col2:
         
         st.markdown("### 🤖 Collaborative Agent Swarm Analysis")
         
-        # 1. Observability Agent View with Thinking Trail
         with st.expander("👁️ 1. Observability Agent Report", expanded=True):
             st.markdown(f"**🔍 Evidence Found:**\n{results['observability'].get('evidence', results['observability'].get('summary'))}")
             st.write("")
@@ -385,7 +371,6 @@ with col2:
             st.write("")
             st.markdown(f"**Anomaly Confidence Score:** `{results['observability']['confidence']}%`")
 
-        # 2. Agent Memory Panel
         st.markdown("🧠 **Agent Memory (Vector DB Matches)**")
         history = current_scenario.get("historical_incidents", [])
         if history:
@@ -400,7 +385,6 @@ with col2:
             st.write("No matching historical records found.")
         st.write("")
 
-        # 3. RCA Agent View with Thinking Trail & Consensus
         with st.expander("🔍 2. RCA Agent & Consensus Negotiation", expanded=True):
             st.markdown(f"**🤝 Diagnostic Negotiation Log:**\n*{results['rca']['negotiation']}*")
             st.write("---")
@@ -411,7 +395,6 @@ with col2:
             st.markdown(f"**🎯 Conclusion:**\n`{results['rca'].get('conclusion', results['rca']['consensus_rca'])}`")
             st.write("---")
             
-            # Confidence Consensus metrics
             c_col1, c_col2, c_col3 = st.columns(3)
             c_col1.metric("Observability Conf.", f"{results['rca']['obs_confidence']}%")
             c_col2.metric("RCA Agent Conf.", f"{results['rca']['rca_confidence']}%")
@@ -419,7 +402,6 @@ with col2:
             
             st.markdown(f"**Negotiated Consensus Root Cause:**\n`{results['rca']['consensus_rca']}`")
 
-        # 4. Blast Radius Agent View
         with st.expander("💥 3. Blast Radius & Business Impact Analyzer", expanded=True):
             st.markdown(f"**Estimated User Impact:** `{results['blast_radius']['user_impact']}`")
             st.markdown(f"**Business Severity:** `{results['blast_radius']['severity']}`")
@@ -429,7 +411,6 @@ with col2:
             for idx, service in enumerate(results['blast_radius']['affected_services']):
                 cols[idx].markdown(f"⚡ `{service}`")
 
-        # 5. Remediation Agent View
         with st.expander("🛠️ 4. Remediation Recommender & Predictive Impact", expanded=True):
             st.markdown("**Proposed Action Plan:**")
             for step in results['remediation']['steps']:
@@ -446,7 +427,6 @@ with col2:
             </div>
             """, unsafe_allow_html=True)
 
-        # Swarm Performance & AMD Telemetry Card (Dynamic GPU peaks)
         st.markdown("### 📊 Swarm Performance & AMD Telemetry")
         with st.container(border=True):
             tel_cols = st.columns(3)
@@ -455,24 +435,20 @@ with col2:
             if elapsed is None:
                 elapsed = 1.2
                 
-            # Estimate tokens generated based on character count of payload
             payload_str = json.dumps(results)
             approx_tokens = len(payload_str) // 4
             throughput = approx_tokens / elapsed if elapsed > 0 else 0
             
-            # Retrieve benchmarked peaks
             p_power = st.session_state.get("peak_power", 685.0)
             p_gpu = st.session_state.get("peak_gpu", 98.0)
             p_temp = st.session_state.get("peak_temp", 52.0)
             
-            # Render performance metrics
             tel_cols[0].metric("Swarm E2E Latency", f"{elapsed:.2f}s", delta="GPU Accelerated")
             tel_cols[1].metric("Tokens Generated", f"{approx_tokens:,} tokens", delta=f"{throughput:.1f} tok/sec")
             tel_cols[2].metric("Peak GPU Power", f"{p_power:.1f}W", delta=f"Load: {p_gpu:.1f}%")
             
             st.info(f"💾 **Hardware Telemetry Check:** Core Junction Temp peak reached **{p_temp:.1f}°C** during Swarm processing.")
 
-        # 6. Action & Resolution (Operations Agent)
         st.write("")
         st.markdown("### ⚡ Autonomous Action & Resolution Center")
         
@@ -494,7 +470,6 @@ with col2:
             else:
                 st.success("🎉 Remediation Hot-Patch Executed Successfully!")
                 
-                # Real-time Infrastructure Recovery Card (Priority 3)
                 st.markdown("### 🟢 Real-time Infrastructure Recovery Metrics")
                 rec_cols = st.columns(3)
                 if st.session_state.selected_scenario == "Critical Payment Outage":
@@ -535,7 +510,6 @@ with col2:
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Postmortem and Download
                 st.write("")
                 st.markdown("### 📄 Generated Incident Postmortem")
                 st.markdown(results['operations']['postmortem'])
@@ -548,7 +522,6 @@ with col2:
                     use_container_width=True
                 )
 
-                # Export Slide Deck Outline Button with Peak telemetry data
                 st.write("")
                 slide_outline = generate_slide_outline(
                     st.session_state.selected_scenario,

@@ -3,7 +3,6 @@ import json
 import time
 from typing import Dict, Any
 
-# Mock response library for fail-safe demo mode (in case LLM is offline or unconfigured)
 MOCK_RESPONSES = {
     "Critical Payment Outage": {
         "observability": {
@@ -192,13 +191,11 @@ class AgentOrchestrator:
         if self.use_real_llm:
             try:
                 from openai import OpenAI
-                # Typically points to local Ollama, vLLM, or LM Studio running on user's setup
                 self.client = OpenAI(
                     base_url=os.getenv("OPENAI_API_BASE", "http://localhost:11434/v1"),
                     api_key=os.getenv("OPENAI_API_KEY", "ollama")
                 )
             except ImportError:
-                print("OpenAI SDK not installed. Defaulting to mock mode.")
                 self.use_real_llm = False
 
     def run_pipeline(self, scenario_name: str, raw_input: Dict[str, Any] = None) -> Dict[str, Any]:
@@ -208,27 +205,21 @@ class AgentOrchestrator:
         Otherwise, returns highly detailed mock outputs for a flawless demo.
         """
         if not self.use_real_llm:
-            # Check if it's one of our preloaded scenarios
             if scenario_name in MOCK_RESPONSES:
-                # Add simulated pipeline delay to make the Streamlit demo feel real
                 time.sleep(0.5) 
                 return MOCK_RESPONSES[scenario_name]
             else:
-                # Fallback generator for custom uploads if LLM is offline
                 return self._generate_fallback_mock(scenario_name, raw_input)
         
-        # Real LLM implementation
         return self._run_real_llm_pipeline(scenario_name, raw_input)
 
     def _run_real_llm_pipeline(self, scenario_name: str, raw_input: Dict[str, Any]) -> Dict[str, Any]:
-        # Implementation of real LLM chain
         try:
             alerts = raw_input.get("alerts", [])
             logs = raw_input.get("logs", [])
             metrics = raw_input.get("metrics", {})
             history = raw_input.get("historical_incidents", [])
 
-            # 1. Observability Agent Call
             obs_prompt = f"""You are the Observability Agent. Analyze the following alerts and logs.
 Alerts: {json.dumps(alerts)}
 Logs: {json.dumps(logs)}
@@ -248,7 +239,6 @@ Return JSON format ONLY:
             )
             obs_out = json.loads(response.choices[0].message.content)
 
-            # 2. RCA Agent Call
             rca_prompt = f"""You are the RCA Agent. You receive:
 - Observability Agent's findings: {obs_out['conclusion']} (Confidence: {obs_out['confidence']}%)
 - Metrics: {json.dumps(metrics)}
@@ -273,7 +263,6 @@ Return JSON format ONLY:
             )
             rca_out = json.loads(response.choices[0].message.content)
 
-            # 3. Blast Radius Agent
             blast_prompt = f"""You are the Blast Radius Agent. Given the diagnosed root cause: {rca_out['consensus_rca']}.
 Analyze the downstream service impact, user failure rates, and business severity.
 Return JSON format ONLY:
@@ -289,7 +278,6 @@ Return JSON format ONLY:
             )
             blast_out = json.loads(response.choices[0].message.content)
 
-            # 4. Remediation Agent
             rem_prompt = f"""You are the Remediation Agent. Given the root cause: {rca_out['consensus_rca']} and Blast Radius: {json.dumps(blast_out)}.
 Propose step-by-step remediation commands. Also project the business impact if we do nothing for 30 minutes and 60 minutes.
 Return JSON format ONLY:
@@ -305,7 +293,6 @@ Return JSON format ONLY:
             )
             rem_out = json.loads(response.choices[0].message.content)
 
-            # 5. Operations Agent (Simulates remediation and creates postmortem report)
             ops_prompt = f"""You are the Operations Agent. Write a detailed incident postmortem in markdown format.
 Root Cause: {rca_out['consensus_rca']}
 Remediation Steps: {json.dumps(rem_out['steps'])}
@@ -332,7 +319,6 @@ Return JSON format ONLY:
             }
 
         except Exception as e:
-            # Raise the exception with helpful setup diagnostic instructions
             raise RuntimeError(
                 f"LLM Connection Error: {e}.\n"
                 f"Please verify:\n"
@@ -345,14 +331,12 @@ Return JSON format ONLY:
         Dynamically extracts keywords from custom user input files to generate
         a semi-realistic analysis report even without a live LLM connection.
         """
-        # Parse what we can from user inputs
         alerts = raw_input.get("alerts", []) if raw_input else []
         logs = raw_input.get("logs", []) if raw_input else []
         
         alert_str = " ".join(alerts).lower()
         log_str = " ".join(logs).lower()
         
-        # Simple rule matcher to fit custom uploads
         if "db" in alert_str or "database" in alert_str or "connection" in log_str:
             return MOCK_RESPONSES["Critical Payment Outage"]
         elif "oom" in alert_str or "memory" in log_str or "heap" in log_str:
