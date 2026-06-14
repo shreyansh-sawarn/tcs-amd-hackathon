@@ -1,5 +1,5 @@
 {
-  "name": "Telecom Edge Router Failover & High Latency",
+  "name": "Telecom Network Failure",
   "alerts": [
     "Alert: BGP Session Down with core switch (EdgeRouter01)",
     "Alert: Edge Gateway Packet Loss > 15%"

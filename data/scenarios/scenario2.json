@@ -1,5 +1,5 @@
 {
-  "name": "Order Service OOM Memory Leak",
+  "name": "Order Processing Collapse",
   "alerts": [
     "Alert: OrderProcessing Pod restarted (liveness probe failure)",
     "Alert: Pod memory utilization exceeds 95% threshold"

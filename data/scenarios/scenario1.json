@@ -1,5 +1,5 @@
 {
-  "name": "Database Connection Pool Exhaustion",
+  "name": "Critical Payment Outage",
   "alerts": [
     "Alert: Payment API response time > 3 seconds (SLA breach)",
     "Alert: DBConnectionPool saturation alert (100% utilized)"

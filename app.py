@@ -169,7 +169,7 @@ with col1:
         m_col3, m_col4 = st.columns(2)
         
         with m_col1:
-            st.metric("CPU Load", metrics.get("CPU Usage", "N/A"), delta="Normal" if "normal" in metrics.get("CPU Usage", "").lower() or "42%" in metrics.get("CPU Usage", "") else "Elevated", delta_color="inverse")
+            st.metric("CPU Load", metrics.get("CPU Usage", "N/A"), delta="Normal" if "normal" in metrics.get("CPU Usage", "").lower() or "22%" in metrics.get("CPU Usage", "") or "42%" in metrics.get("CPU Usage", "") else "Elevated", delta_color="inverse")
         with m_col2:
             st.metric("Memory Usage", metrics.get("Memory Usage", "N/A"), delta="Critical" if "99%" in metrics.get("Memory Usage", "") else "Normal", delta_color="inverse")
         with m_col3:
@@ -201,6 +201,33 @@ with col1:
             st.session_state.ticket_id = None
 
 with col2:
+    # Always display Architecture Overview
+    with st.expander("🗺️ How OpsPilot AI Works (Autonomous Reasoning Loop)", expanded=False):
+        st.markdown("""
+        **OpsPilot AI uses a sequential multi-agent loop with shared consensus memory:**
+        ```
+        [Raw Observability Inputs: Logs, Alerts, Metrics]
+                             │
+                             ▼
+        1. Observability Agent (Gathers symptoms & evidence)
+                             │
+                             ▼
+        [Agent Memory Panel: Semantic matches over Vector Store]
+                             │
+                             ▼
+        2. RCA Agent (Consensus negotiation & root cause isolation)
+                             │
+                             ▼
+        3. Blast Radius Agent (Downstream service mapping & user impact)
+                             │
+                             ▼
+        4. Remediation Agent (Step-by-step resolution plan & do-nothing forecast)
+                             │
+                             ▼
+        5. Operations Agent (Autonomous script execution & Postmortem documentation)
+        ```
+        """)
+
     if st.session_state.pipeline_results is None:
         st.info("Click **Ingest & Start Multi-Agent Diagnostic Swarm** on the left to initiate the analysis pipeline.")
     else:
@@ -208,9 +235,14 @@ with col2:
         
         st.markdown("### 🤖 Collaborative Agent Swarm Analysis")
         
-        # 1. Observability Agent View
+        # 1. Observability Agent View with Thinking Trail
         with st.expander("👁️ 1. Observability Agent Report", expanded=True):
-            st.markdown(f"**Analysis Summary:**\n{results['observability']['summary']}")
+            st.markdown(f"**🔍 Evidence Found:**\n{results['observability'].get('evidence', results['observability'].get('summary'))}")
+            st.write("")
+            st.markdown(f"**🧠 Reasoning:**\n*{results['observability'].get('reasoning', 'Analyzing metrics anomalies and error threshold alerts.')}*")
+            st.write("")
+            st.markdown(f"**🎯 Conclusion:**\n`{results['observability'].get('conclusion', results['observability'].get('summary'))}`")
+            st.write("")
             st.markdown(f"**Anomaly Confidence Score:** `{results['observability']['confidence']}%`")
 
         # 2. Agent Memory Panel
@@ -228,9 +260,15 @@ with col2:
             st.write("No matching historical records found.")
         st.write("")
 
-        # 3. RCA Agent View
+        # 3. RCA Agent View with Thinking Trail & Consensus
         with st.expander("🔍 2. RCA Agent & Consensus Negotiation", expanded=True):
-            st.markdown(f"**Diagnostic Negotiation Log:**\n*{results['rca']['negotiation']}*")
+            st.markdown(f"**🤝 Diagnostic Negotiation Log:**\n*{results['rca']['negotiation']}*")
+            st.write("---")
+            st.markdown(f"**🔍 Evidence Correlated:**\n{results['rca'].get('evidence', 'Analyzing correlation between hardware starvation and application-side limits.')}")
+            st.write("")
+            st.markdown(f"**🧠 Reasoning:**\n*{results['rca'].get('reasoning', 'Isolating root cause by ruling out non-starved hardware interfaces.')}*")
+            st.write("")
+            st.markdown(f"**🎯 Conclusion:**\n`{results['rca'].get('conclusion', results['rca']['consensus_rca'])}`")
             st.write("---")
             
             # Confidence Consensus metrics
@@ -288,6 +326,25 @@ with col2:
                         st.rerun()
             else:
                 st.success("🎉 Remediation Hot-Patch Executed Successfully!")
+                
+                # Real-time Infrastructure Recovery Card (Priority 3)
+                st.markdown("### 🟢 Real-time Infrastructure Recovery Metrics")
+                rec_cols = st.columns(3)
+                if st.session_state.selected_scenario == "Critical Payment Outage":
+                    rec_cols[0].metric("System Status", "RECOVERED", delta="Healthy", delta_color="normal")
+                    rec_cols[1].metric("Network Latency", "12ms", delta="-3438ms (Healthy)", delta_color="inverse")
+                    rec_cols[2].metric("DB Connections", "35/100", delta="-65 connections", delta_color="inverse")
+                elif st.session_state.selected_scenario == "Order Processing Collapse":
+                    rec_cols[0].metric("System Status", "RECOVERED", delta="Healthy", delta_color="normal")
+                    rec_cols[1].metric("Memory Usage", "45% Heap", delta="-54% Memory", delta_color="inverse")
+                    rec_cols[2].metric("CPU Load", "12%", delta="-73% (GC OK)", delta_color="inverse")
+                else:  # Telecom Network Failure
+                    rec_cols[0].metric("System Status", "RECOVERED", delta="Healthy", delta_color="normal")
+                    rec_cols[1].metric("Network Latency", "12ms", delta="-408ms (SLA OK)", delta_color="inverse")
+                    rec_cols[2].metric("Packet Loss", "0.1%", delta="-18.4% loss", delta_color="inverse")
+                
+                st.write("")
+                
                 st.code(st.session_state.remediation_output, language="log")
                 st.info(f"💾 ServiceNow ITSM Incident log updated. Ticket ID: **{st.session_state.ticket_id}**")
                 
@@ -296,9 +353,9 @@ with col2:
                 timeline_data = [
                     ("12:03 PM", "Alert triggered in target infrastructure"),
                     ("12:04 PM", "Observability Agent analyzed errors and flags anomalies"),
-                    ("12:05 PM", "RCA Agent established connection pool exhaustion consensus"),
-                    ("12:06 PM", "Blast Radius Agent identified affected services"),
-                    ("12:07 PM", "Remediation Agent designed the scale-up patch"),
+                    ("12:05 PM", "RCA Agent established consensus and rules out hardware starvation"),
+                    ("12:06 PM", "Blast Radius Agent identified affected services and revenue risk"),
+                    ("12:07 PM", "Remediation Agent designed the scale-up patch and rollback commands"),
                     ("12:08 PM", f"Operations Agent successfully executed Hot-Patch script: {results['operations']['command']}"),
                     ("12:09 PM", "Automated system validation checks passed. Operations back to Healthy (VRAM/RAM stabilized).")
                 ]

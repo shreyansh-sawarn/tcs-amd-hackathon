@@ -5,9 +5,11 @@ from typing import Dict, Any
 
 # Mock response library for fail-safe demo mode (in case LLM is offline or unconfigured)
 MOCK_RESPONSES = {
-    "Database Connection Pool Exhaustion": {
+    "Critical Payment Outage": {
         "observability": {
-            "summary": "Detected a complete saturation of the database connection pool. Active connections are at 100% capacity (100/100). This has triggered cascading timeouts in the downstream Payment API, leading to a critical SLA breach (> 3s latency) and HTTP 500 errors in the Billing Service.",
+            "evidence": "• Payment API response time > 3 seconds (SLA breach)\n• DBConnectionPool saturation alert (100% utilized)",
+            "reasoning": "The connection pool is fully saturated, leading to queue delays. Downstream services are failing to acquire database connections, which results in cascading timeouts and HTTP 500 errors in the Billing Service.",
+            "conclusion": "Database connection pool exhaustion is causing a cascading payment processing failure.",
             "confidence": 88
         },
         "rca": {
@@ -15,7 +17,10 @@ MOCK_RESPONSES = {
             "obs_confidence": 88,
             "rca_confidence": 94,
             "consensus_confidence": 91,
-            "negotiation": "Observability Agent flagged general database access timeouts based on Payment API HTTP 500s. RCA Agent correlated this with metrics showing CPU and Memory at normal levels, while Active Connections remained pinned at 100/100. Both agents negotiated and agreed that the root cause is Connection Pool Exhaustion, rule out database server hardware starvation (since CPU/RAM are healthy)."
+            "negotiation": "Observability Agent flagged Payment API timeouts. RCA Agent correlated this with connection pool utilization at 100%, while server CPU (42%) and Memory (68%) remain healthy. Both agents negotiated and agreed that the root cause is Connection Pool Exhaustion, ruling out database server hardware starvation.",
+            "evidence": "• Active DB connections: 100/100 (100% capacity)\n• Server CPU and Memory utilization remain in normal limits.",
+            "reasoning": "Since the database host CPU/RAM are normal, the issue is not database hardware starvation. The bottleneck is the application-side pool limit of 100 connections.",
+            "conclusion": "Database connection pool limit of 100 is too low for the current transaction volume, causing queue saturation."
         },
         "blast_radius": {
             "affected_services": ["Payment API", "Billing Service", "Checkout Page"],
@@ -60,9 +65,11 @@ The database connection pool maximum was increased from 100 to 250 using deploym
 """
         }
     },
-    "Order Service OOM Memory Leak": {
+    "Order Processing Collapse": {
         "observability": {
-            "summary": "OrderProcessing service is crashing and restarting repeatedly (liveness probe failures). JVM log inspection shows recurrent `java.lang.OutOfMemoryError: Java heap space` errors during batch processing allocations.",
+            "evidence": "• OrderProcessing Pod restarted (liveness probe failure)\n• Pod memory utilization exceeds 95% threshold",
+            "reasoning": "JVM Heap utilization is pinned at 96% and logs contain `java.lang.OutOfMemoryError: Java heap space`. This indicates that the JVM heap size is fully saturated and cannot allocate new memory objects, leading to container crashes.",
+            "conclusion": "JVM heap space saturation is causing recurrent service container restarts.",
             "confidence": 92
         },
         "rca": {
@@ -70,7 +77,10 @@ The database connection pool maximum was increased from 100 to 250 using deploym
             "obs_confidence": 92,
             "rca_confidence": 96,
             "consensus_confidence": 94,
-            "negotiation": "Observability Agent identified the repeated container restarts and liveness failures. RCA Agent reviewed metrics indicating RAM usage was pinned at 99% with high CPU load (85%), typical of JVM Garbage Collection thrashing prior to crash. Consensus reached: The batch processing algorithm is leaking memory under heavy loads, exhausting the 2G heap space."
+            "negotiation": "Observability Agent identified the repeated container restarts. RCA Agent reviewed metrics indicating RAM usage was pinned at 99% with high CPU load (85%), typical of JVM Garbage Collection thrashing prior to crash. Consensus reached: The batch processing algorithm is leaking memory under heavy loads, exhausting the 2G heap space.",
+            "evidence": "• Memory usage pinned at 99%\n• High CPU load (85%) indicating Garbage Collection thrashing\n• Recurrent `java.lang.OutOfMemoryError: Java heap space`",
+            "reasoning": "High CPU utilization combined with memory saturation is the classic signature of GC thrashing, where the garbage collector spends 98% of its time trying to recover memory but frees less than 2% of the heap.",
+            "conclusion": "A batch processing memory leak is preventing memory recovery, causing JVM crash."
         },
         "blast_radius": {
             "affected_services": ["OrderProcessing Service", "Inventory Sync", "Mobile App Checkout"],
@@ -113,9 +123,11 @@ The Max JVM Heap memory limit (-Xmx) was dynamically scaled from 2G to 4G to abs
 """
         }
     },
-    "Telecom Edge Router Failover & High Latency": {
+    "Telecom Network Failure": {
         "observability": {
-            "summary": "Severe packet loss (18.5%) and extreme network latency (420ms) detected on the Edge network. BGP session with core switch is down on GigabitEthernet0/1, routing fallback Saturation on backup GigabitEthernet0/2 interface.",
+            "evidence": "• BGP Session Down with core switch (EdgeRouter01)\n• Edge Gateway Packet Loss > 15%",
+            "reasoning": "The primary GigabitEthernet0/1 protocol interface protocol is down. Outgoing network traffic has failed over to the backup link, causing routing congestion (packet loss 18.5% and latency 420ms).",
+            "conclusion": "Primary edge link down forcing failover and saturation on the backup connection.",
             "confidence": 85
         },
         "rca": {
@@ -123,7 +135,10 @@ The Max JVM Heap memory limit (-Xmx) was dynamically scaled from 2G to 4G to abs
             "obs_confidence": 85,
             "rca_confidence": 90,
             "consensus_confidence": 87,
-            "negotiation": "Observability Agent identified the primary link GigabitEthernet0/1 protocol down. RCA Agent matched this with a BGP adjacency drop and validated that the backup interface GigabitEthernet0/2 is overloaded, causing the 420ms latency. Agreed that the root cause is physical port link down on the primary interface forcing high-latency fallback."
+            "negotiation": "Observability Agent identified the primary link GigabitEthernet0/1 protocol down. RCA Agent matched this with a BGP adjacency drop and validated that the backup interface GigabitEthernet0/2 is overloaded, causing the 420ms latency. Agreed that the root cause is physical port link down on the primary interface forcing high-latency fallback.",
+            "evidence": "• BGP-5-ADJCHANGE: neighbor 10.255.0.2 Down\n• Primary Link Gig0/1 Protocol down\n• Backup Link Gig0/2 saturated",
+            "reasoning": "The primary fiber path failed, forcing dynamic routing failover to a smaller capacity backup path. This backup path is physically incapable of routing the edge voice/data traffic, causing packet queues to discard data.",
+            "conclusion": "Physical fiber link flap or port failure on GigabitEthernet0/1."
         },
         "blast_radius": {
             "affected_services": ["Customer Edge VoIP Gateways", "WAN VPN Tunnel", "NOC Telemetry Stream"],
@@ -207,7 +222,6 @@ class AgentOrchestrator:
 
     def _run_real_llm_pipeline(self, scenario_name: str, raw_input: Dict[str, Any]) -> Dict[str, Any]:
         # Implementation of real LLM chain
-        # We will build this out cleanly so if they connect an LLM, it acts correctly
         try:
             alerts = raw_input.get("alerts", [])
             logs = raw_input.get("logs", [])
@@ -218,9 +232,14 @@ class AgentOrchestrator:
             obs_prompt = f"""You are the Observability Agent. Analyze the following alerts and logs.
 Alerts: {json.dumps(alerts)}
 Logs: {json.dumps(logs)}
-Identify key anomalies and error patterns. Provide a concise summary of your findings and state your initial confidence score (integer 0-100) on the core issue.
+Identify key anomalies and error patterns. 
 Return JSON format ONLY:
-{{"summary": "...", "confidence": 90}}"""
+{{
+  "evidence": "Describe the evidence found (key logs, errors, metrics)...",
+  "reasoning": "Explain your reasoning about the anomaly...",
+  "conclusion": "Provide a concise summary/conclusion of the observability analysis...",
+  "confidence": 90
+}}"""
 
             response = self.client.chat.completions.create(
                 model=self.model_name,
@@ -231,7 +250,7 @@ Return JSON format ONLY:
 
             # 2. RCA Agent Call
             rca_prompt = f"""You are the RCA Agent. You receive:
-- Observability Agent's findings: {obs_out['summary']} (Confidence: {obs_out['confidence']}%)
+- Observability Agent's findings: {obs_out['conclusion']} (Confidence: {obs_out['confidence']}%)
 - Metrics: {json.dumps(metrics)}
 - Historical Incident: {json.dumps(history)}
 
@@ -242,7 +261,10 @@ Return JSON format ONLY:
   "obs_confidence": {obs_out['confidence']},
   "rca_confidence": 95,
   "consensus_confidence": 92,
-  "negotiation": "Explain the collaboration and consensus path..."
+  "negotiation": "Explain the collaboration and consensus path...",
+  "evidence": "Evidence found for root cause...",
+  "reasoning": "Reasoning path leading to the root cause...",
+  "conclusion": "Root Cause conclusion statement"
 }}"""
             response = self.client.chat.completions.create(
                 model=self.model_name,
@@ -328,8 +350,8 @@ Return JSON format ONLY:
         
         # Simple rule matcher to fit custom uploads
         if "db" in alert_str or "database" in alert_str or "connection" in log_str:
-            return MOCK_RESPONSES["Database Connection Pool Exhaustion"]
+            return MOCK_RESPONSES["Critical Payment Outage"]
         elif "oom" in alert_str or "memory" in log_str or "heap" in log_str:
-            return MOCK_RESPONSES["Order Service OOM Memory Leak"]
+            return MOCK_RESPONSES["Order Processing Collapse"]
         else:
-            return MOCK_RESPONSES["Telecom Edge Router Failover & High Latency"]
+            return MOCK_RESPONSES["Telecom Network Failure"]
