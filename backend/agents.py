@@ -332,9 +332,13 @@ Return JSON format ONLY:
             }
 
         except Exception as e:
-            # Fallback to mock mode automatically if LLM error occurs
-            print(f"LLM integration error: {e}. Falling back to mock mode.")
-            return self._generate_fallback_mock(scenario_name, raw_input)
+            # Raise the exception with helpful setup diagnostic instructions
+            raise RuntimeError(
+                f"LLM Connection Error: {e}.\n"
+                f"Please verify:\n"
+                f"1. Is the vLLM server running in Terminal 1?\n"
+                f"2. Does the 'Model Name' text box exactly match the vLLM model name (case-sensitive: 'Qwen/Qwen2.5-7B-Instruct')?"
+            )
 
     def _generate_fallback_mock(self, scenario_name: str, raw_input: Dict[str, Any]) -> Dict[str, Any]:
         """
