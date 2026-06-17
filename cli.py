@@ -41,6 +41,11 @@ def main():
         help="Execute the proposed hot-patch remediation command simulation"
     )
     parser.add_argument(
+        "-y", "--yes",
+        action="store_true",
+        help="Skip confirmation prompt and execute remediation directly"
+    )
+    parser.add_argument(
         "--output-postmortem", 
         help="Path to save the generated postmortem markdown report (e.g., postmortem.md)"
     )
@@ -118,15 +123,27 @@ def main():
         # Execute remediation simulation if requested
         if args.execute:
             if command:
-                print(f"\n🔧 Executing Remediation Command...")
-                exec_res = execute_remediation_command(command)
-                print(f"  ↳ Status:    {exec_res.get('status')}")
-                print(f"  ↳ Timestamp: {exec_res.get('timestamp')}")
-                print(f"  ↳ Output:\n{exec_res.get('output')}")
+                should_execute = True
+                if not args.yes:
+                    try:
+                        user_input = input(f"\n❓ Do you want to execute the remediation command: '{command}'? [y/N]: ").strip().lower()
+                        should_execute = user_input in ("y", "yes")
+                    except KeyboardInterrupt:
+                        print("\nExecution cancelled.")
+                        sys.exit(1)
                 
-                print(f"\n📝 Registering ServiceNow Incident Ticket...")
-                incident_id = create_servicenow_incident(scenario_data)
-                print(f"  ↳ Incident Logged: {incident_id} (State: Resolved)")
+                if should_execute:
+                    print(f"\n🔧 Executing Remediation Command...")
+                    exec_res = execute_remediation_command(command)
+                    print(f"  ↳ Status:    {exec_res.get('status')}")
+                    print(f"  ↳ Timestamp: {exec_res.get('timestamp')}")
+                    print(f"  ↳ Output:\n{exec_res.get('output')}")
+                    
+                    print(f"\n📝 Registering ServiceNow Incident Ticket...")
+                    incident_id = create_servicenow_incident(scenario_data)
+                    print(f"  ↳ Incident Logged: {incident_id} (State: Resolved)")
+                else:
+                    print("\n⏭️ Remediation command execution skipped by user request.")
             else:
                 print("\n⚠️ No remediation command available to execute.")
         

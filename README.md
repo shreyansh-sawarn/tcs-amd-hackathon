@@ -116,8 +116,11 @@ OpsPilot AI includes a standalone CLI tool (`cli.py`) for executing the agent sw
 # Run in Mock Mode (local keyword-fallback for zero-LLM setup)
 python cli.py data/scenarios/scenario1.json
 
-# Run in Mock Mode, execute remediation commands, and log a ServiceNow ticket simulation
+# Run in Mock Mode, prompting the user for confirmation before executing the remediation
 python cli.py data/scenarios/scenario1.json --execute
+
+# Run in Mock Mode and execute the remediation instantly without prompting (auto-approve)
+python cli.py data/scenarios/scenario1.json --execute -y
 
 # Run in Live LLM Mode (requires the vLLM server to be active)
 python cli.py data/scenarios/scenario1.json --live-llm --model Qwen/Qwen2.5-7B-Instruct
@@ -127,9 +130,11 @@ python cli.py data/scenarios/scenario1.json --output-postmortem postmortem.md
 ```
 
 > [!NOTE]
-> **Mock Mode vs. Live LLM Mode in CLI:**
+> **Key CLI Features:**
+> * **Interactive Safety Guard:** Specifying `--execute` alone will prompt you with `[y/N]` to confirm the repair. Supply the `-y` or `--yes` flag to bypass this confirmation (ideal for fully autonomous loops or cronjobs).
 > * **Mock Mode (Default):** Runs instantly using pre-cached, high-fidelity scenario templates. This is great for rapid demonstrations, debugging, and verification without booting up a heavy GPU model.
 > * **Live LLM Mode (`--live-llm`):** Routes agent prompts to the local OpenAI-compatible endpoint served by the vLLM server on port `11434`. Ensure your vLLM server (Terminal 1) is active before using this flag.
+
 
 
 ### Terminal 3: Monitor GPU Performance
