@@ -179,6 +179,173 @@ The primary interface was rebooted via SSH administrative override, and routing 
 2. Upgrade backup link capacity.
 """
         }
+    },
+    "Edge Case: Missing Logs": {
+        "observability": {
+            "evidence": "• Alert: High API latency detected on User Auth Service\n• Logs: None (Log collection pipeline failure or unavailable)",
+            "reasoning": "Alerts and metrics indicate high CPU (88%) and latency (250ms), but the absence of application log files prevents precise error matching. We cannot determine if this is a software deadlock or bad database query.",
+            "conclusion": "Degraded observability confidence due to missing log files. Requesting additional telemetry or log collector daemon verification.",
+            "confidence": 45
+        },
+        "rca": {
+            "consensus_rca": "Indeterminate - Probable High CPU Starvation",
+            "obs_confidence": 45,
+            "rca_confidence": 55,
+            "consensus_confidence": 50,
+            "negotiation": "Observability Agent highlighted that the lack of logs limits symptom analysis. RCA Agent correlated the 88% CPU load and ruled out network bottlenecks, concluding that CPU starvation is the most likely cause, but marked consensus confidence low.",
+            "evidence": "• CPU usage: 88%\n• Logs are empty.",
+            "reasoning": "Without logs, we cannot perform full root-cause consensus. We must fall back to basic metric correlation. High CPU points to compute bottleneck.",
+            "conclusion": "Suspected CPU starvation on Auth Service, but diagnosis is limited by missing log streams."
+        },
+        "blast_radius": {
+            "affected_services": ["User Auth Service", "Login Gateway"],
+            "user_impact": "Unable to verify auth tokens; 20% of users experiencing login latency",
+            "severity": "Medium"
+        },
+        "remediation": {
+            "steps": [
+                "1. Verify and restart the FluentBit/Logstash log forwarding agents.",
+                "2. Fetch manual stdout thread dump from Auth Service pods.",
+                "3. Temporarily scale up Auth Service CPU limits or replicas to mitigate high CPU load."
+            ],
+            "do_nothing_30m": "Unable to diagnose further. Login queues will experience cascading timeouts.",
+            "do_nothing_60m": "Auth service pod restarts may trigger due to cpu throttling, resulting in a total login outage."
+        },
+        "operations": {
+            "command": "kubectl get daemonset fluentbit -n logging || echo 'FluentBit not found'",
+            "postmortem": """# INCIDENT POSTMORTEM REPORT: INC-2026-004
+
+## Incident Summary
+High latency was detected on the User Auth Service. Due to a crash in the logging daemon, no application log streams were available, degrading diagnostic confidence.
+
+## Outage Timeline
+* **02:00 PM**: Latency threshold alert triggered on User Auth Service.
+* **02:01 PM**: Observability Agent noted that active log streams were empty.
+* **02:02 PM**: RCA Agent correlated high CPU metrics, diagnosing probable CPU starvation.
+* **02:03 PM**: Operations Agent flagged the log collector failure and recommended log agent verification.
+
+## Root Cause
+Degraded system observability due to a crash in the log collector service (FluentBit), combined with elevated CPU on the User Auth Service.
+
+## Resolution
+Manually checked the log forwarding daemonset status to restore log ingestion, followed by scaling auth service pods to reduce CPU load.
+
+## Future Prevention
+1. Set up node-level heartbeat monitoring for FluentBit daemonset.
+2. Establish fallback log retrieval via local file caching.
+"""
+        }
+    },
+    "Edge Case: Conflicting Evidence": {
+        "observability": {
+            "evidence": "• API Gateway Network Timeout alert\n• Database Connection Timeout alert\n• Metric: CPU usage is idle (12%)\n• Metric: Network latency is healthy (18ms)",
+            "reasoning": "The network latency metric is healthy (18ms), but the API gateway reports timeouts, and the DB client reports connection pool thread exhaustion. Idle CPU (12%) suggests the services are not starved for CPU resources but are waiting on blocked threads.",
+            "conclusion": "Conflicting indicators: Gateway timeouts are occurring despite healthy infrastructure network metrics, suggesting an application-level deadlock or pool lock.",
+            "confidence": 65
+        },
+        "rca": {
+            "consensus_rca": "Database Connection Pool Lock (Thread Block)",
+            "obs_confidence": 65,
+            "rca_confidence": 75,
+            "consensus_confidence": 70,
+            "negotiation": "The Observability Agent flagged contradictory network vs application alerts. The RCA Agent analyzed the database client errors and reconciled the conflicting data by identifying that the bottleneck is logical (database connection pool thread lock) rather than a physical network issue, which explains the healthy 18ms latency and low CPU.",
+            "evidence": "• DatabaseClient: failed to acquire sql connection pool thread\n• CPU is idle (12%)\n• Raw network ping latency is normal (18ms)",
+            "reasoning": "A physical network partition would show high latency or packet drop. CPU starvation would show high CPU. Low CPU + timeouts + DB pool errors points to a logical pool deadlock where all threads are stuck waiting for a lock.",
+            "conclusion": "Logical deadlock in DB connection acquisition thread pool."
+        },
+        "blast_radius": {
+            "affected_services": ["API Gateway", "Auth Service", "Core SQL Database"],
+            "user_impact": "Cascading 504 gateway timeouts for database-dependent API requests",
+            "severity": "High"
+        },
+        "remediation": {
+            "steps": [
+                "1. Clear active locks in the SQL database by terminating idle/blocked transactions.",
+                "2. Perform a rolling restart of the API Gateway and Auth Service to release connection pool locks."
+            ],
+            "do_nothing_30m": "Deadlock will remain indefinitely until service pods are rebooted. Thread backlog will spill over to upstream proxy.",
+            "do_nothing_60m": "Upstream ingress traffic will experience total TCP queue exhaustion."
+        },
+        "operations": {
+            "command": "kubectl rollout restart deployment/api-gateway deployment/auth-service",
+            "postmortem": """# INCIDENT POSTMORTEM REPORT: INC-2026-005
+
+## Incident Summary
+API Gateway reported cascading 504 timeouts despite normal network ping and CPU metrics, resulting from a logical database connection pool lock.
+
+## Outage Timeline
+* **02:10 PM**: API Gateway network timeout alerts triggered.
+* **02:11 PM**: Observability Agent flagged connection pool timeouts in DB logs.
+* **02:12 PM**: RCA Agent reconciled the idle CPU and normal network metrics, ruling out hardware starvation.
+* **02:13 PM**: Operations Agent triggered a rolling restart of the application deployments to release locks.
+
+## Root Cause
+An application-level logical lock in the SQL database connection pool blocked thread acquisition.
+
+## Resolution
+Initiated a rolling restart of the API Gateway and Auth Service deployments to clear stale connections.
+
+## Future Prevention
+1. Implement transaction timeout limits at the database driver layer.
+2. Setup connection leak detection alerts.
+"""
+        }
+    },
+    "Edge Case: Unknown Incident": {
+        "observability": {
+            "evidence": "• Alert: Unhandled Exception in Kafka Ingestion Daemon\n• Logs: DeserializationException: Corrupt avro schema payload received on topic customer-event",
+            "reasoning": "The ingestion daemon crashed because it encountered a payload schema that does not match its local registry schema, resulting in an unhandled parsing exception.",
+            "conclusion": "Avro schema mismatch leading to Kafka ingestion service thread crash.",
+            "confidence": 95
+        },
+        "rca": {
+            "consensus_rca": "Kafka Consumer Schema Mismatch / Poison Pill Payload",
+            "obs_confidence": 95,
+            "rca_confidence": 95,
+            "consensus_confidence": 95,
+            "negotiation": "No matching historical incident was found in the agent memory (Vector DB returned 0 results). The RCA Agent proceeded strictly by parsing the telemetry logs and alerts. Both agents agreed that the root cause is a schema definition mismatch between the message producer and consumer.",
+            "evidence": "• DeserializationException: Corrupt avro schema payload\n• Zero vector-db historical incident matches.",
+            "reasoning": "Since there's no historical reference, we analyze the stack trace: DeserializationException on topic customer-event indicates a 'poison pill' message with an incompatible schema.",
+            "conclusion": "Schema evolution mismatch on Kafka topic."
+        },
+        "blast_radius": {
+            "affected_services": ["Kafka Ingestion Daemon", "Customer Event Processor"],
+            "user_impact": "Real-time analytics event streaming lag accumulating; events are not being ingested",
+            "severity": "High"
+        },
+        "remediation": {
+            "steps": [
+                "1. Update the Schema Registry mapping for the 'customer-event' topic.",
+                "2. Configure the Kafka consumer to skip or redirect deserialization failures to a Dead Letter Queue (DLQ).",
+                "3. Restart the Kafka Ingestion Daemon pods."
+            ],
+            "do_nothing_30m": "Kafka consumer lag will grow to over 50,000 messages, delaying downstream event ingestion.",
+            "do_nothing_60m": "Message offset storage might expire, causing potential data loss or duplicate message processing."
+        },
+        "operations": {
+            "command": "kubectl rollout restart deployment/kafka-ingestion",
+            "postmortem": """# INCIDENT POSTMORTEM REPORT: INC-2026-006
+
+## Incident Summary
+An unhandled DeserializationException on the Kafka ingestion daemon caused event consumer threads to crash, halting event streaming.
+
+## Outage Timeline
+* **03:20 PM**: Kafka Ingestion Daemon exception alerts triggered.
+* **03:21 PM**: Observability Agent parsed logs and isolated schema mismatch deserialization errors.
+* **03:22 PM**: RCA Agent verified no matches in historical incidents, and isolated the root cause to schema mismatch.
+* **03:23 PM**: Operations Agent recommended rolling restart of consumer deployment.
+
+## Root Cause
+An incompatible schema payload (poison pill) was published to the `customer-event` topic, crashing the consumer.
+
+## Resolution
+Updated local schema mappings and triggered a rolling restart of the consumer daemon.
+
+## Future Prevention
+1. Configure consumer to send deserialization exceptions to a Dead Letter Queue (DLQ).
+2. Enforce schema registry validation checks on the producer client.
+"""
+        }
     }
 }
 

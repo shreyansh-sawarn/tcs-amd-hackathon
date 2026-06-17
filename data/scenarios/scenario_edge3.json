@@ -1,0 +1,17 @@
+{
+  "name": "Edge Case: Unknown Incident",
+  "alerts": [
+    "Alert: Unhandled Exception in Kafka Ingestion Daemon"
+  ],
+  "logs": [
+    "2026-06-14T15:20:00Z [CRITICAL] KafkaIngestion: DeserializationException: Corrupt avro schema payload received on topic customer-event",
+    "2026-06-14T15:20:05Z [ERROR] KafkaIngestion: Thread group crashed due to unhandled payload parsing exception"
+  ],
+  "metrics": {
+    "CPU Usage": "45%",
+    "Memory Usage": "52%",
+    "Active DB Connections": "8/100",
+    "Network Latency": "15ms"
+  },
+  "historical_incidents": []
+}

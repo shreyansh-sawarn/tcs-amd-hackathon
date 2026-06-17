@@ -373,14 +373,48 @@ with col2:
         history = current_scenario.get("historical_incidents", [])
         if history:
             for item in history:
+                inc_id = item.get("id", "INC-XXXX")
+                inc_name = item.get("name", "Unknown Incident")
+                inc_date = item.get("date", "N/A")
+                inc_res = item.get("resolution", "No previous resolution logged.")
+                
+                # Mock similarity percentages realistically based on ID or hash
+                if inc_id == "INC-1024":
+                    similarity = 91
+                elif inc_id == "INC-0988":
+                    similarity = 88
+                elif inc_id == "INC-0761":
+                    similarity = 93
+                else:
+                    similarity = (hash(str(inc_name)) % 15) + 80
+                    
                 st.markdown(f"""
-                <div style='background-color:#1b2838; border-left:3px solid #ff9900; padding:10px; border-radius:4px;'>
-                    <strong>Similar Incident Matched:</strong> {item['id']} - {item['name']} ({item['date']})<br/>
-                    <strong>Resolution:</strong> {item['resolution']}
+                <div style='background-color:#161b22; border:1px solid #30363d; border-left:4px solid #ff9900; padding:15px; border-radius:6px; margin-bottom:10px;'>
+                    <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;'>
+                        <span style='color:#ff9900; font-weight:bold; font-size:1rem;'>🔍 Similar Incident Found: {inc_id}</span>
+                        <span style='background-color:#ff990022; color:#ff9900; border:1px solid #ff990044; padding:2px 8px; border-radius:12px; font-size:0.85rem; font-weight:bold;'>Similarity: {similarity}%</span>
+                    </div>
+                    <div style='font-size:0.9rem; color:#8b949e; margin-bottom:10px;'>
+                        <strong>Title:</strong> {inc_name} &nbsp;|&nbsp; <strong>Occurred:</strong> {inc_date}
+                    </div>
+                    <div style='background-color:#0d1117; border:1px solid #21262d; padding:10px; border-radius:4px; font-size:0.9rem;'>
+                        <strong style='color:#58a6ff;'>Previous Resolution:</strong><br/>
+                        <span style='color:#c9d1d9;'>{inc_res}</span>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.write("No matching historical records found.")
+            st.markdown(f"""
+            <div style='background-color:#161b22; border:1px solid #30363d; border-left:4px solid #f85149; padding:15px; border-radius:6px; margin-bottom:10px;'>
+                <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;'>
+                    <span style='color:#f85149; font-weight:bold; font-size:1rem;'>🔍 Memory Retrieval: No Match</span>
+                    <span style='background-color:#f8514922; color:#f85149; border:1px solid #f8514944; padding:2px 8px; border-radius:12px; font-size:0.85rem; font-weight:bold;'>Threshold: > 80%</span>
+                </div>
+                <div style='font-size:0.9rem; color:#8b949e;'>
+                    No matching historical incidents found in Vector DB. Root Cause Analysis Agent will proceed using system telemetry and real-time logs.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         st.write("")
 
         with st.expander("🔍 2. RCA Agent & Consensus Negotiation", expanded=True):

@@ -1,0 +1,18 @@
+{
+  "name": "Edge Case: Conflicting Evidence",
+  "alerts": [
+    "Alert: API Gateway Network Timeout",
+    "Alert: Database Connection Timeout"
+  ],
+  "logs": [
+    "2026-06-14T14:10:00Z [ERROR] APIGateway: upstream gateway timeout 504 on routing",
+    "2026-06-14T14:10:05Z [WARNING] DatabaseClient: failed to acquire sql connection pool thread"
+  ],
+  "metrics": {
+    "CPU Usage": "12% (Idle)",
+    "Memory Usage": "40% (Normal)",
+    "Active DB Connections": "5/100",
+    "Network Latency": "18ms (Healthy)"
+  },
+  "historical_incidents": []
+}

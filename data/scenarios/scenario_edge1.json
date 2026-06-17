@@ -1,0 +1,14 @@
+{
+  "name": "Edge Case: Missing Logs",
+  "alerts": [
+    "Alert: High API latency detected on User Auth Service"
+  ],
+  "logs": [],
+  "metrics": {
+    "CPU Usage": "88% (Elevated)",
+    "Memory Usage": "60% (Normal)",
+    "Active DB Connections": "15/100",
+    "Network Latency": "250ms (High)"
+  },
+  "historical_incidents": []
+}

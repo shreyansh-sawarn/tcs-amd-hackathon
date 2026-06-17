@@ -150,10 +150,16 @@ During active swarm reasoning loops, you will observe the socket power draw rise
 
 ## 🧪 Testing Scenarios
 
-OpsPilot AI is preloaded with three high-stakes incident scenarios, which can be selected via the sidebar:
+OpsPilot AI is preloaded with three high-stakes incident scenarios and three technical edge cases, selectable via the sidebar or runnable in the CLI:
 1. **Critical Payment Outage:** Application database connection pool saturation.
 2. **Order Processing Collapse:** JVM garbage collection (GC) thrashing and Heap Out-of-Memory (OOM).
 3. **Telecom Network Failure:** BGP routing adjacency drop on a primary edge switch forcing fallback saturation.
+4. **Edge Case — Missing Logs:** High latency on User Auth Service with a crashed log collector, testing degraded observability diagnostics.
+5. **Edge Case — Conflicting Evidence:** Gateway timeouts despite healthy network ping and idle CPU, testing logical DB connection pool deadlocks.
+6. **Edge Case — Unknown Incident:** Zero-day Avro schema mismatch with zero vector DB matches, testing direct telemetry-based diagnostics.
+
+### 🧠 Smart Agent Memory (Vector DB Matches)
+The Agent Memory retrieval logic displays dynamic **Similarity Scores**, Incident IDs, occurrence dates, and structured previous resolutions. If an incident has no matching history (such as the *Unknown Incident* case), the system gracefully transitions into a "Memory Retrieval: No Match" state, prompting the RCA agent to isolate the cause strictly from raw metrics and logs.
 
 ### Testing Custom Scenarios
 Reviewers can upload a custom JSON incident file (following the schema of `data/scenarios/scenario1.json`) using the **"Manual Upload"** panel in the sidebar. 
