@@ -36,11 +36,6 @@ def main():
         help="vLLM Model name (default: Qwen/Qwen2.5-7B-Instruct)"
     )
     parser.add_argument(
-        "--execute", 
-        action="store_true", 
-        help="Execute the proposed hot-patch remediation command simulation"
-    )
-    parser.add_argument(
         "-y", "--yes",
         action="store_true",
         help="Skip confirmation prompt and execute remediation directly"
@@ -120,32 +115,31 @@ def main():
         print("-" * 50)
         print(f"Generated Hot-Patch Command: {command}")
         
-        # Execute remediation simulation if requested
-        if args.execute:
-            if command:
-                should_execute = True
-                if not args.yes:
-                    try:
-                        user_input = input(f"\n❓ Do you want to execute the remediation command: '{command}'? [y/N]: ").strip().lower()
-                        should_execute = user_input in ("y", "yes")
-                    except KeyboardInterrupt:
-                        print("\nExecution cancelled.")
-                        sys.exit(1)
+        # Execute remediation simulation (prompts for confirmation unless -y/--yes is provided)
+        if command:
+            should_execute = True
+            if not args.yes:
+                try:
+                    user_input = input(f"\n❓ Do you want to execute the remediation command: '{command}'? [y/N]: ").strip().lower()
+                    should_execute = user_input in ("y", "yes")
+                except KeyboardInterrupt:
+                    print("\nExecution cancelled.")
+                    sys.exit(1)
+            
+            if should_execute:
+                print(f"\n🔧 Executing Remediation Command...")
+                exec_res = execute_remediation_command(command)
+                print(f"  ↳ Status:    {exec_res.get('status')}")
+                print(f"  ↳ Timestamp: {exec_res.get('timestamp')}")
+                print(f"  ↳ Output:\n{exec_res.get('output')}")
                 
-                if should_execute:
-                    print(f"\n🔧 Executing Remediation Command...")
-                    exec_res = execute_remediation_command(command)
-                    print(f"  ↳ Status:    {exec_res.get('status')}")
-                    print(f"  ↳ Timestamp: {exec_res.get('timestamp')}")
-                    print(f"  ↳ Output:\n{exec_res.get('output')}")
-                    
-                    print(f"\n📝 Registering ServiceNow Incident Ticket...")
-                    incident_id = create_servicenow_incident(scenario_data)
-                    print(f"  ↳ Incident Logged: {incident_id} (State: Resolved)")
-                else:
-                    print("\n⏭️ Remediation command execution skipped by user request.")
+                print(f"\n📝 Registering ServiceNow Incident Ticket...")
+                incident_id = create_servicenow_incident(scenario_data)
+                print(f"  ↳ Incident Logged: {incident_id} (State: Resolved)")
             else:
-                print("\n⚠️ No remediation command available to execute.")
+                print("\n⏭️ Remediation command execution skipped by user request.")
+        else:
+            print("\n⚠️ No remediation command available to execute.")
         
         # Save or display postmortem report
         postmortem_content = ops.get("postmortem", "")

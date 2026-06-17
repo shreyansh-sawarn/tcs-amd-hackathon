@@ -113,17 +113,17 @@ You can access the UI via the Jupyter Proxy URL:
 ### Alternative: Run the CLI Utility (Headless/CI Integration)
 OpsPilot AI includes a standalone CLI tool (`cli.py`) for executing the agent swarm pipeline directly from your local terminal/shell environment (ideal for headless servers or automated alert triggers):
 ```bash
-# Run in Mock Mode (local keyword-fallback for zero-LLM setup)
+# Run in Mock Mode (will prompt for confirmation before executing the remediation)
 python cli.py data/scenarios/scenario1.json
 
-# Run in Mock Mode, prompting the user for confirmation before executing the remediation
-python cli.py data/scenarios/scenario1.json --execute
-
 # Run in Mock Mode and execute the remediation instantly without prompting (auto-approve)
-python cli.py data/scenarios/scenario1.json --execute -y
+python cli.py data/scenarios/scenario1.json -y
 
-# Run in Live LLM Mode (requires the vLLM server to be active)
+# Run in Live LLM Mode (will prompt for confirmation before executing the remediation)
 python cli.py data/scenarios/scenario1.json --live-llm --model Qwen/Qwen2.5-7B-Instruct
+
+# Run in Live LLM Mode and execute remediation instantly without prompting
+python cli.py data/scenarios/scenario1.json --live-llm -y
 
 # Save the generated postmortem markdown report to a file
 python cli.py data/scenarios/scenario1.json --output-postmortem postmortem.md
@@ -131,9 +131,11 @@ python cli.py data/scenarios/scenario1.json --output-postmortem postmortem.md
 
 > [!NOTE]
 > **Key CLI Features:**
-> * **Interactive Safety Guard:** Specifying `--execute` alone will prompt you with `[y/N]` to confirm the repair. Supply the `-y` or `--yes` flag to bypass this confirmation (ideal for fully autonomous loops or cronjobs).
-> * **Mock Mode (Default):** Runs instantly using pre-cached, high-fidelity scenario templates. This is great for rapid demonstrations, debugging, and verification without booting up a heavy GPU model.
-> * **Live LLM Mode (`--live-llm`):** Routes agent prompts to the local OpenAI-compatible endpoint served by the vLLM server on port `11434`. Ensure your vLLM server (Terminal 1) is active before using this flag.
+> * **Interactive Safety Guard:** By default, running a scenario will prompt you with `[y/N]` before executing any proposed hot-patch command.
+> * **Auto-Approve (`-y` or `--yes`):** Supply `-y` or `--yes` to bypass the prompt and execute the hot-patch remediation immediately (ideal for cronjobs or fully autonomous loops).
+> * **Mock Mode (Default):** Runs instantly using pre-cached, high-fidelity scenario templates if `--live-llm` is omitted. Great for fast demos without booting up a heavy model.
+> * **Live LLM Mode (`--live-llm`):** Runs the active agent swarm reasoning loops against the vLLM server running on port `11434`.
+
 
 
 
