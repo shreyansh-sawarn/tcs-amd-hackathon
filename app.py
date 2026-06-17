@@ -132,59 +132,57 @@ def run_pipeline_worker(q, orchestrator, scenario_name, current_scenario):
         q.put(("error", str(e)))
 
 # Helper function to compile slide outline markdown with real peak metrics
-def generate_slide_outline(scenario_name, results, elapsed, tokens, throughput, peak_power, peak_gpu, peak_temp):
-    slide_content = f"""# TCS & AMD AI HACKATHON: SUBMISSION SLIDE OUTLINE
+def generate_executive_briefing(scenario_name, results, elapsed, tokens, throughput, peak_power, peak_gpu, peak_temp):
+    steps_formatted = "\n".join([f"  - {step}" for step in results['remediation'].get('steps', [])])
+    briefing_content = f"""# OpsPilot AI — Executive Incident Briefing & Telemetry Audit
     
-## SLIDE 1 – BASIC INFORMATION
-* **Team Name:** [Your Team Name / team-643]
-* **Team Members & Roles:** [Names & Roles, e.g., Shreyansh Sawarn (Code & Integration)]
-* **Project Name:** OpsPilot AI
-* **Short Description:** An Autonomous Operations Intelligence Platform that reasons across logs, metrics, and alerts, predicts business impact, recommends remediation, and generates post-incident knowledge automatically using a multi-agent swarm.
-* **Track Mapped:** Track 1 – Agents (AGENTS_026, AGENTS_032, AGENTS_007)
-
----
-
-## SLIDE 2 – PROBLEM & CONTEXT
-* **Problem Statement:** Operational downtime in modern microservice and network architectures causes cascading failures that take hours to diagnose manually, resulting in severe SLA penalties and revenue loss.
-* **Target Users:** DevOps Teams, Site Reliability Engineers (SREs), Network Operation Centers (NOCs).
-* **Business/Operational Relevance:** Manually tracing logs and metrics during high-severity outages is error-prone. OpsPilot AI automates Root Cause Analysis (RCA) and resolution in seconds rather than hours.
+## 1. Incident Metadata
+* **Platform Name:** OpsPilot AI (Autonomous NOC Intelligence Platform)
 * **Outage Scenario:** {scenario_name}
+* **Trigger Event:** Automated alert ingestion from infrastructure monitoring
+* **Resolution Engine:** Sequential Multi-Agent Swarm (Consensus Reasoning Loop)
 
 ---
 
-## SLIDE 3 – SOLUTION OVERVIEW
-* **Solution Architecture:** Sequential Multi-Agent Orchestration (Observability -> Memory -> RCA -> Blast Radius -> Remediation -> Operations).
-* **AI Approach:** Chain-of-Thought reasoning (Thinking Trails), Vector-DB based Historical Incident Matching (Agent Memory), and Consensus-driven Negotiation between specialized agents.
-* **Key Frameworks:** AMD ROCm, vLLM Inference Engine, Streamlit, OpenAI Client, Python.
-* **What was built:** A fully functioning dark-mode NOC dashboard with pre-loaded enterprise scenarios, live local GPU inference, ServiceNow ITSM integration, and automatic markdown postmortem generation.
+## 2. Problem Statement & Business Context
+* **Incident Profile:** Operational downtime in microservice or network routing architectures that causes cascading service failures, resulting in severe SLA breaches and customer experience degradation.
+* **Target Environment:** DevOps, SRE, and Network Operation Centers (NOC).
+* **Expected Value Proposition:**
+  * Drastic reduction in Mean Time to Resolve (MTTR) from hours to under 2 minutes.
+  * Prevention of cascading service outages through dynamic Blast Radius mapping.
+  * Direct cost mitigation by resolving outages before hitting revenue loss thresholds.
 
 ---
 
-## SLIDE 4 – MODEL INSIGHTS
-* **Models Used:** Qwen2.5-7B-Instruct (served via vLLM)
-* **Dataset(s) Used:** Zero-shot prompting with in-context historical incident retrieval.
-* **Inference Platform:** AMD Instinct™ MI300X GPU (192GB HBM3 Memory)
-* **GPU Memory Utilization:** 91% VRAM (~175 GB) occupied by vLLM for weights and KV Cache.
-* **Peak GPU Junction Temp:** {peak_temp:.1f}°C (Real-time telemetry metric)
-* **Peak Socket Power Draw:** {peak_power:.1f}W (Real-time telemetry metric)
-* **Peak GPU Compute Load:** {peak_gpu:.1f}% (Real-time telemetry metric)
-* **End-to-End Latency:** {elapsed:.2f} seconds
+## 3. Swarm Reasoning Loop Diagnostics
+* **Observability Diagnosis:** {results['observability'].get('conclusion', 'N/A')}
+* **Root Cause Analysis Consensus:** {results['rca'].get('consensus_rca', 'N/A')}
+* **Consensus Confidence:** {results['rca'].get('consensus_confidence', 0)}%
+* **Blast Radius Impact:** {results['blast_radius'].get('user_impact', 'N/A')} (Severity: {results['blast_radius'].get('severity', 'N/A')})
+* **Downstream Services Affected:** {', '.join(results['blast_radius'].get('affected_services', []))}
+* **Proposed Remediation Plan:**
+{steps_formatted}
+
+---
+
+## 4. Model & Telemetry Metrics (AMD Hardware Acceleration Audit)
+* **Diagnostic Model:** Qwen2.5-7B-Instruct
+* **Inference Platform:** AMD Instinct™ MI300X GPU (192GB HBM3 VRAM)
+* **GPU Memory Utilization:** ~91% VRAM allocated for weights and KV Cache
+* **Peak GPU Junction Temperature:** {peak_temp:.1f}°C (Real-time telemetry sample)
+* **Peak Socket Power Draw:** {peak_power:.1f}W (Real-time telemetry sample)
+* **Peak GPU Compute Load:** {peak_gpu:.1f}% (Real-time telemetry sample)
+* **Swarm E2E Latency:** {elapsed:.2f} seconds
 * **Tokens Generated:** {tokens:,} tokens
 * **Generation Throughput:** {throughput:.1f} tokens/second
 
 ---
 
-## SLIDE 5 – IMPACT & DEMO SUMMARY
-* **Expected Value:** 
-  * Reduction in Mean Time to Resolve (MTTR) from hours to under 2 minutes.
-  * Prevention of cascading service outages through dynamic Blast Radius mapping.
-  * Direct cost savings of up to $18,500/hr by resolving outages before revenue impact thresholds.
-* **Key Differentiator:** 
-  * Ingestion flexibility: This platform can ingest incidents from Prometheus, Grafana, ServiceNow, telecom NOCs, or uploaded incident files.
-  * Closed-loop remediation: Autonomous one-click deployment repair script execution paired with real-time ServiceNow ticket logging and postmortem creation.
-* **Demo Flow:** Show telemetry alarm stream -> run agent diagnostic swarm -> inspect consensus negotiation & thinking trail -> approve remediation -> verify real-time infrastructure recovery metrics.
+## 5. Strategic Differentiators
+* **Closed-Loop Remediation:** Fully automated postmortem creation, ServiceNow ticket logging, and hot-patch script recommendation.
+* **Data Security & Privacy:** Runs completely on-premise/local utilizing private AMD GPU clusters. Sensitive logging, credential, and telemetry data never leave the corporate perimeter.
 """
-    return slide_content
+    return briefing_content
 
 if "selected_scenario" not in st.session_state:
     st.session_state.selected_scenario = list(scenarios.keys())[0] if scenarios else ""
@@ -523,7 +521,7 @@ with col2:
                 )
 
                 st.write("")
-                slide_outline = generate_slide_outline(
+                executive_briefing = generate_executive_briefing(
                     st.session_state.selected_scenario,
                     results,
                     elapsed,
@@ -534,9 +532,9 @@ with col2:
                     st.session_state.get("peak_temp", 52.0)
                 )
                 st.download_button(
-                    label="📥 Export Executive Slide Outline & Telemetry Audit (Markdown)",
-                    data=slide_outline,
-                    file_name=f"submission_slide_outline_{st.session_state.selected_scenario.lower().replace(' ', '_')}.md",
+                    label="📥 Export Executive Briefing & Telemetry Audit (Markdown)",
+                    data=executive_briefing,
+                    file_name=f"executive_briefing_{st.session_state.selected_scenario.lower().replace(' ', '_')}.md",
                     mime="text/markdown",
                     use_container_width=True
                 )
