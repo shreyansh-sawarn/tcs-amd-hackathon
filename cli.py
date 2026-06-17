@@ -143,6 +143,7 @@ def main():
         print(f"Generated Hot-Patch Command: {command}")
         
         # Execute remediation simulation (prompts for confirmation unless -y/--yes is provided)
+        should_execute = False
         if command:
             should_execute = True
             if not args.yes:
@@ -179,9 +180,17 @@ def main():
                 print(f"\n⚠️ Failed to save postmortem report: {e}")
         else:
             print("\n" + "=" * 70)
-            print("📄 GENERATED INCIDENT POSTMORTEM REPORT")
-            print("=" * 70)
-            print(postmortem_content.strip())
+            if should_execute:
+                print("📄 GENERATED INCIDENT POSTMORTEM REPORT (State: Resolved)")
+                print("=" * 70)
+                print(postmortem_content.strip())
+            else:
+                print("📄 DRAFT POSTMORTEM REPORT (State: Remediation Pending)")
+                print("=" * 70)
+                print("⚠️  Warning: Remediation command was skipped. The postmortem draft below")
+                print("    projects system recovery assuming the repair script is executed.")
+                print("-" * 70)
+                print(postmortem_content.strip())
             
         print("\n" + "=" * 70)
         print(f"⏱️ Swarm reasoning completed successfully in {elapsed:.2f} seconds.")
